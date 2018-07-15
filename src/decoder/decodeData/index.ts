@@ -1,6 +1,6 @@
 // tslint:disable:no-bitwise
 import { BitStream } from "./BitStream";
-import { shiftJISTable } from "./shiftJISTable";
+// import { shiftJISTable } from "./shiftJISTable";
 
 export interface Chunk {
   type: Mode;
@@ -30,7 +30,7 @@ export enum Mode {
   Alphanumeric = "alphanumeric",
   Byte = "byte",
   Kanji = "kanji",
-  ECI = "eci",
+  ECI = "eci"
 }
 
 enum ModeByte {
@@ -39,7 +39,7 @@ enum ModeByte {
   Alphanumeric = 0x2,
   Byte = 0x4,
   Kanji = 0x8,
-  ECI = 0x7,
+  ECI = 0x7
   // StructuredAppend = 0x3,
   // FNC1FirstPosition = 0x5,
   // FNC1SecondPosition = 0x9,
@@ -93,11 +93,51 @@ function decodeNumeric(stream: BitStream, size: number) {
 }
 
 const AlphanumericCharacterCodes = [
-  "0", "1", "2", "3", "4", "5", "6", "7", "8",
-  "9", "A", "B", "C", "D", "E", "F", "G", "H",
-  "I", "J", "K", "L", "M", "N", "O", "P", "Q",
-  "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-  " ", "$", "%", "*", "+", "-", ".", "/", ":",
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
+  " ",
+  "$",
+  "%",
+  "*",
+  "+",
+  "-",
+  ".",
+  "/",
+  ":"
 ];
 
 function decodeAlphanumeric(stream: BitStream, size: number) {
@@ -112,7 +152,10 @@ function decodeAlphanumeric(stream: BitStream, size: number) {
     const a = Math.floor(v / 45);
     const b = v % 45;
 
-    bytes.push(AlphanumericCharacterCodes[a].charCodeAt(0), AlphanumericCharacterCodes[b].charCodeAt(0));
+    bytes.push(
+      AlphanumericCharacterCodes[a].charCodeAt(0),
+      AlphanumericCharacterCodes[b].charCodeAt(0)
+    );
     text += AlphanumericCharacterCodes[a] + AlphanumericCharacterCodes[b];
     length -= 2;
   }
@@ -137,7 +180,9 @@ function decodeByte(stream: BitStream, size: number) {
     bytes.push(b);
   }
   try {
-    text += decodeURIComponent(bytes.map(b => `%${("0" + b.toString(16)).substr(-2)}`).join(""));
+    text += decodeURIComponent(
+      bytes.map(b => `%${("0" + b.toString(16)).substr(-2)}`).join("")
+    );
   } catch {
     // failed to decode
   }
@@ -145,28 +190,28 @@ function decodeByte(stream: BitStream, size: number) {
   return { bytes, text };
 }
 
-function decodeKanji(stream: BitStream, size: number) {
-  const bytes: number[] = [];
-  let text = "";
+// function decodeKanji(stream: BitStream, size: number) {
+//   const bytes: number[] = [];
+//   let text = "";
 
-  const characterCountSize = [8, 10, 12][size];
-  const length = stream.readBits(characterCountSize);
-  for (let i = 0; i < length; i++) {
-    const k = stream.readBits(13);
+//   const characterCountSize = [8, 10, 12][size];
+//   const length = stream.readBits(characterCountSize);
+//   for (let i = 0; i < length; i++) {
+//     const k = stream.readBits(13);
 
-    let c = (Math.floor(k / 0xC0) << 8) | (k % 0xC0);
-    if (c < 0x1F00) {
-      c += 0x8140;
-    } else {
-      c += 0xC140;
-    }
+//     let c = (Math.floor(k / 0xC0) << 8) | (k % 0xC0);
+//     if (c < 0x1F00) {
+//       c += 0x8140;
+//     } else {
+//       c += 0xC140;
+//     }
 
-    bytes.push(c >> 8, c & 0xFF);
-    text += String.fromCharCode(shiftJISTable[c]);
-  }
+//     bytes.push(c >> 8, c & 0xFF);
+//     text += String.fromCharCode(shiftJISTable[c]);
+//   }
 
-  return { bytes, text };
-}
+//   return { bytes, text };
+// }
 
 export function decode(data: Uint8ClampedArray, version: number): DecodedQR {
   const stream = new BitStream(data);
@@ -177,7 +222,7 @@ export function decode(data: Uint8ClampedArray, version: number): DecodedQR {
   const result: DecodedQR = {
     text: "",
     bytes: [],
-    chunks: [],
+    chunks: []
   };
 
   while (stream.available() >= 4) {
@@ -188,23 +233,23 @@ export function decode(data: Uint8ClampedArray, version: number): DecodedQR {
       if (stream.readBits(1) === 0) {
         result.chunks.push({
           type: Mode.ECI,
-          assignmentNumber: stream.readBits(7),
+          assignmentNumber: stream.readBits(7)
         });
       } else if (stream.readBits(1) === 0) {
         result.chunks.push({
           type: Mode.ECI,
-          assignmentNumber: stream.readBits(14),
+          assignmentNumber: stream.readBits(14)
         });
       } else if (stream.readBits(1) === 0) {
         result.chunks.push({
           type: Mode.ECI,
-          assignmentNumber: stream.readBits(21),
+          assignmentNumber: stream.readBits(21)
         });
       } else {
         // ECI data seems corrupted
         result.chunks.push({
           type: Mode.ECI,
-          assignmentNumber: -1,
+          assignmentNumber: -1
         });
       }
     } else if (mode === ModeByte.Numeric) {
@@ -213,7 +258,7 @@ export function decode(data: Uint8ClampedArray, version: number): DecodedQR {
       result.bytes.push(...numericResult.bytes);
       result.chunks.push({
         type: Mode.Numeric,
-        text: numericResult.text,
+        text: numericResult.text
       });
     } else if (mode === ModeByte.Alphanumeric) {
       const alphanumericResult = decodeAlphanumeric(stream, size);
@@ -221,7 +266,7 @@ export function decode(data: Uint8ClampedArray, version: number): DecodedQR {
       result.bytes.push(...alphanumericResult.bytes);
       result.chunks.push({
         type: Mode.Alphanumeric,
-        text: alphanumericResult.text,
+        text: alphanumericResult.text
       });
     } else if (mode === ModeByte.Byte) {
       const byteResult = decodeByte(stream, size);
@@ -230,17 +275,18 @@ export function decode(data: Uint8ClampedArray, version: number): DecodedQR {
       result.chunks.push({
         type: Mode.Byte,
         bytes: byteResult.bytes,
-        text: byteResult.text,
-      });
-    } else if (mode === ModeByte.Kanji) {
-      const kanjiResult = decodeKanji(stream, size);
-      result.text += kanjiResult.text;
-      result.bytes.push(...kanjiResult.bytes);
-      result.chunks.push({
-        type: Mode.Kanji,
-        bytes: kanjiResult.bytes,
-        text: kanjiResult.text,
+        text: byteResult.text
       });
     }
+    // } else if (mode === ModeByte.Kanji) {
+    //   const kanjiResult = decodeKanji(stream, size);
+    //   result.text += kanjiResult.text;
+    //   result.bytes.push(...kanjiResult.bytes);
+    //   result.chunks.push({
+    //     type: Mode.Kanji,
+    //     bytes: kanjiResult.bytes,
+    //     text: kanjiResult.text,
+    //   });
+    // }
   }
 }
